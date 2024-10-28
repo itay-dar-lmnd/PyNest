@@ -373,6 +373,98 @@
                 width: 40px;
             }
         }
+
+        .code-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: #007acc;
+            border-color: #007acc;
+        }
+
+        .code-block {
+            display: none;
+        }
+
+        .code-block.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .features-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 50px;
+            background: #1a1a1a;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-stats .number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #007acc;
+        }
+
+        .testimonials {
+            padding: 80px 50px;
+            background: #121212;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .testimonial {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .testimonial:hover {
+            transform: translateY(-5px);
+        }
+
+        .author {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .author img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
     </style>
 </head>
 <body>
@@ -445,10 +537,16 @@
 
     <!-- Code Section -->
     <section class="code-section">
-        <h2>Get Started with PyNest</h2>
-        <div class="code-block">
-            <button class="copy-button" onclick="copyCode()">Copy</button>
-            <pre><code class="language-python">
+        <h2>Write Beautiful Code</h2>
+        <div class="code-tabs">
+            <button class="tab-button active" onclick="switchTab('basic')">Basic Setup</button>
+            <button class="tab-button" onclick="switchTab('advanced')">Advanced Features</button>
+            <button class="tab-button" onclick="switchTab('auth')">Authentication</button>
+        </div>
+        <div class="code-blocks">
+            <div class="code-block active" id="basic">
+                <button class="copy-button" onclick="copyCode()">Copy</button>
+                <pre><code class="language-python">
 from nest.core import PyNestFactory, Module, Controller, Get, Injectable
 
 @Injectable()
@@ -481,7 +579,48 @@ app = PyNestFactory.create(
     debug=True,
 )
 
-            </code></pre>
+                </code></pre>
+            </div>
+            <div class="code-block" id="advanced">
+                <!-- Add advanced code example -->
+            </div>
+            <div class="code-block" id="auth">
+                <!-- Add authentication code example -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Showcase -->
+    <section class="features-showcase">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="feature-stats">
+                <div class="stat">
+                    <span class="number" data-target="30000">0</span>
+                    <span class="label">Requests/sec</span>
+                </div>
+            </div>
+        </div>
+        <!-- Add more feature cards -->
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <h2>What Developers Say</h2>
+        <div class="testimonials-grid">
+            <div class="testimonial">
+                <div class="quote">"PyNest has revolutionized how we build Python backends. The modular architecture is a game-changer."</div>
+                <div class="author">
+                    <img src="path/to/avatar.jpg" alt="Developer Name">
+                    <div class="author-info">
+                        <div class="name">John Doe</div>
+                        <div class="role">Senior Backend Developer at Tech Corp</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Add more testimonials -->
         </div>
     </section>
 
@@ -517,6 +656,39 @@ app = PyNestFactory.create(
                 console.error('Could not copy text: ', err);
             });
         }
+    </script>
+
+    <!-- Number Animation Script -->
+    <script>
+        // Add number animation
+        function animateNumbers() {
+            document.querySelectorAll('.number').forEach(number => {
+                const target = parseInt(number.getAttribute('data-target'));
+                const increment = target / 100;
+                let current = 0;
+
+                const updateNumber = () => {
+                    if(current < target) {
+                        current += increment;
+                        number.textContent = Math.round(current);
+                        requestAnimationFrame(updateNumber);
+                    }
+                };
+
+                updateNumber();
+            });
+        }
+
+        // Trigger animation when in view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    animateNumbers();
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.features-showcase'));
     </script>
 </body>
 </html>
