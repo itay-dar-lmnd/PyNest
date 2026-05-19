@@ -26,3 +26,15 @@ def test_http_method_is_same_object_as_original():
     from nest.core.decorators.http_method import HTTPMethod
     # Re-export must be identity — no copy or subclass
     assert HttpMethod is HTTPMethod
+
+
+def test_engine_package_exports():
+    import nest.engine as engine
+    assert hasattr(engine, "AbstractHttpAdapter")
+    assert hasattr(engine, "RouteSpec")
+    assert hasattr(engine, "ParamSpec")
+    assert hasattr(engine, "HttpMethod")
+    assert hasattr(engine, "Endpoint")
+    assert hasattr(engine, "ExecutionContext")
+    assert hasattr(engine, "HttpExecutionContext")
+    assert hasattr(engine, "VALID_SOURCES")
