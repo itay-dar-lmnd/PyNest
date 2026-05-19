@@ -10,14 +10,15 @@ TRequest = TypeVar("TRequest")
 TResponse = TypeVar("TResponse")
 
 
-class _PyNestABCMeta(ABCMeta):
+class _ABCMetaMROFix(ABCMeta):
     """
-    ABCMeta subclass that resolves abstract methods against the full MRO.
+    Minimal ABCMeta subclass that fixes a Python 3.9 bug where abstract
+    methods are not resolved against the full MRO when a concrete mixin
+    appears after the ABC in the bases tuple (e.g.
+    ``type("X", (AbstractHttpAdapter, Mixin), {})``).
 
-    Standard ABCMeta only considers classes that precede the ABC in the MRO.
-    This subclass additionally scans bases that appear *after* the ABC so
-    that mixin-style compositions (e.g. ``type("X", (AbstractHttpAdapter, Mixin), {})``)
-    are correctly recognised as concrete when the mixin provides all abstract methods.
+    In Python 3.10+ this is handled correctly by ABCMeta itself and this
+    class becomes a no-op (the loop finds no remaining abstract methods).
     """
 
     def __new__(
@@ -26,18 +27,18 @@ class _PyNestABCMeta(ABCMeta):
         bases: tuple,
         namespace: dict,
         **kwargs: Any,
-    ) -> "_PyNestABCMeta":
+    ) -> "_ABCMetaMROFix":
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        # Re-evaluate which methods remain truly abstract after considering
-        # the full MRO, including bases listed after the ABC itself.
+        if not cls.__abstractmethods__:
+            return cls
         remaining: set[str] = set()
-        for method_name in list(cls.__abstractmethods__):
+        for method_name in cls.__abstractmethods__:
             for klass in cls.__mro__:
                 if klass is cls:
                     continue
                 impl = klass.__dict__.get(method_name)
                 if impl is not None and not getattr(impl, "__isabstractmethod__", False):
-                    break  # a concrete implementation exists somewhere in the MRO
+                    break
             else:
                 remaining.add(method_name)
         cls.__abstractmethods__ = frozenset(remaining)
@@ -46,7 +47,7 @@ class _PyNestABCMeta(ABCMeta):
 
 class AbstractHttpAdapter(
     Generic[TServer, TRequest, TResponse],
-    metaclass=_PyNestABCMeta,
+    metaclass=_ABCMetaMROFix,
 ):
     """
     Base class for PyNest HTTP engine adapters. NestJS-inspired.
@@ -65,10 +66,10 @@ class AbstractHttpAdapter(
         if instance is not None:
             self._instance: Any = instance
         else:
-            # Walk the MRO to find the first *concrete* _create_instance
+            # Walk the MRO to find the first concrete _create_instance
             # implementation.  This is necessary when the concrete provider
-            # appears later in the MRO than AbstractHttpAdapter itself (e.g.
-            # mixin-style subclasses created via type()).
+            # appears later in the MRO than AbstractHttpAdapter (e.g. when
+            # using mixin-style composition via type()).
             for klass in type(self).__mro__:
                 impl = klass.__dict__.get("_create_instance")
                 if impl is not None and not getattr(impl, "__isabstractmethod__", False):
