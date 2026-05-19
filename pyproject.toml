@@ -116,3 +116,8 @@ exclude = [
     "/*venv*"
 ]
 ignore_missing_imports = true
+
+[tool.uv.workspace]
+members = [
+    "test-app",
+]
