@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import typing
 from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, FastAPI, Request
@@ -157,6 +158,11 @@ def _wrap_with_filters(endpoint, filters) -> callable:
 
     filter_wrapper.__name__ = getattr(endpoint, "__name__", "filter_wrapper")
     filter_wrapper.__signature__ = wrapper_sig
+    # Propagate resolved annotations so FastAPI finds actual return types.
+    try:
+        filter_wrapper.__annotations__ = typing.get_type_hints(endpoint)
+    except Exception:
+        filter_wrapper.__annotations__ = getattr(endpoint, "__annotations__", {})
     return filter_wrapper
 
 

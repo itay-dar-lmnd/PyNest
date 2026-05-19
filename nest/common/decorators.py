@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import keyword
+import typing
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Tuple
 
@@ -114,9 +115,23 @@ def has_param_decorators(endpoint: Callable) -> bool:
 
 def wrap_param_decorators(endpoint: Callable) -> Callable:
     signature = inspect.signature(endpoint)
+
+    # Resolve string annotations produced by `from __future__ import annotations`.
+    # get_type_hints() evaluates forward-ref strings in their defining module's
+    # namespace so Pydantic/FastAPI receive actual types, not bare strings.
+    try:
+        resolved_hints = typing.get_type_hints(endpoint)
+    except Exception:
+        resolved_hints = {}
+
     wrapped_parameters = []
 
     for parameter in signature.parameters.values():
+        # Substitute resolved annotation where available
+        resolved_annotation = resolved_hints.get(parameter.name, parameter.annotation)
+        if resolved_annotation is not parameter.annotation:
+            parameter = parameter.replace(annotation=resolved_annotation)
+
         if isinstance(parameter.default, ParamMetadata):
             dependency = _build_dependency(parameter)
             wrapped_parameters.append(
@@ -128,7 +143,12 @@ def wrap_param_decorators(endpoint: Callable) -> Callable:
         else:
             wrapped_parameters.append(parameter)
 
-    wrapper_signature = signature.replace(parameters=wrapped_parameters)
+    # Resolve return annotation too — FastAPI uses it for response model serialization.
+    resolved_return = resolved_hints.get("return", signature.return_annotation)
+    wrapper_signature = signature.replace(
+        parameters=wrapped_parameters,
+        return_annotation=resolved_return,
+    )
     handler_param_names = set(signature.parameters)
 
     async def wrapper(*args, **kwargs):
@@ -140,6 +160,10 @@ def wrap_param_decorators(endpoint: Callable) -> Callable:
 
     wrapper.__name__ = getattr(endpoint, "__name__", "param_decorator_wrapper")
     wrapper.__signature__ = wrapper_signature
+    # Propagate resolved annotations so FastAPI's get_type_hints(wrapper) finds
+    # actual types rather than forward-ref strings (which can't be resolved from
+    # nest/common/decorators.py's module context).
+    wrapper.__annotations__ = {k: v for k, v in resolved_hints.items()}
     return wrapper
 
 
@@ -347,12 +371,16 @@ def _first_source_value(kwargs: dict) -> Any:
 async def _apply_pipes(value: Any, pipes: Tuple[Any, ...]) -> Any:
     for pipe in pipes:
         pipe_instance = pipe() if inspect.isclass(pipe) else pipe
-        if hasattr(pipe_instance, "transform"):
-            value = pipe_instance.transform(value)
-        elif callable(pipe_instance):
-            value = pipe_instance(value)
-        else:
-            raise TypeError("Pipe must be callable or expose a transform method")
+        try:
+            if hasattr(pipe_instance, "transform"):
+                value = pipe_instance.transform(value)
+            elif callable(pipe_instance):
+                value = pipe_instance(value)
+            else:
+                raise TypeError("Pipe must be callable or expose a transform method")
+        except (ValueError, TypeError) as exc:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         if inspect.isawaitable(value):
             value = await value
     return value

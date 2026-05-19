@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from nest.core import Controller, Delete, Get, HttpCode, Post
 from nest.common.decorators import Body, Param, Query
 from nest.common.exceptions import NotFoundException

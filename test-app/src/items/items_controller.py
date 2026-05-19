@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from nest.core import Controller, Get, HttpCode, Post
 from nest.core.decorators.guards import UseGuards
 from nest.core.decorators.filters import UseFilters
