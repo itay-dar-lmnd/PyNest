@@ -1,4 +1,8 @@
+# tests/test_engine/unit/test_types.py
 from __future__ import annotations
+
+import typing
+
 
 def test_http_method_values():
     from nest.engine.types import HttpMethod
@@ -10,6 +14,15 @@ def test_http_method_values():
     assert HttpMethod.HEAD.value == "HEAD"
     assert HttpMethod.OPTIONS.value == "OPTIONS"
 
+
 def test_endpoint_is_callable_alias():
     from nest.engine.types import Endpoint
-    assert Endpoint is not None
+    # Verify Endpoint is the correct generic alias, not just non-None
+    assert Endpoint == typing.Callable[..., typing.Any]
+
+
+def test_http_method_is_same_object_as_original():
+    from nest.engine.types import HttpMethod
+    from nest.core.decorators.http_method import HTTPMethod
+    # Re-export must be identity — no copy or subclass
+    assert HttpMethod is HTTPMethod
