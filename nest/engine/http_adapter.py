@@ -1,6 +1,7 @@
+# nest/engine/http_adapter.py
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Generic, Optional, TypeVar
 
 from nest.engine.route_spec import RouteSpec
@@ -10,45 +11,7 @@ TRequest = TypeVar("TRequest")
 TResponse = TypeVar("TResponse")
 
 
-class _ABCMetaMROFix(ABCMeta):
-    """
-    Minimal ABCMeta subclass that fixes a Python 3.9 bug where abstract
-    methods are not resolved against the full MRO when a concrete mixin
-    appears after the ABC in the bases tuple (e.g.
-    ``type("X", (AbstractHttpAdapter, Mixin), {})``).
-
-    In Python 3.10+ this is handled correctly by ABCMeta itself and this
-    class becomes a no-op (the loop finds no remaining abstract methods).
-    """
-
-    def __new__(
-        mcs,
-        name: str,
-        bases: tuple,
-        namespace: dict,
-        **kwargs: Any,
-    ) -> "_ABCMetaMROFix":
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        if not cls.__abstractmethods__:
-            return cls
-        remaining: set[str] = set()
-        for method_name in cls.__abstractmethods__:
-            for klass in cls.__mro__:
-                if klass is cls:
-                    continue
-                impl = klass.__dict__.get(method_name)
-                if impl is not None and not getattr(impl, "__isabstractmethod__", False):
-                    break
-            else:
-                remaining.add(method_name)
-        cls.__abstractmethods__ = frozenset(remaining)
-        return cls
-
-
-class AbstractHttpAdapter(
-    Generic[TServer, TRequest, TResponse],
-    metaclass=_ABCMetaMROFix,
-):
+class AbstractHttpAdapter(ABC, Generic[TServer, TRequest, TResponse]):
     """
     Base class for PyNest HTTP engine adapters. NestJS-inspired.
 
@@ -63,20 +26,9 @@ class AbstractHttpAdapter(
     """
 
     def __init__(self, instance: Optional[Any] = None) -> None:
-        if instance is not None:
-            self._instance: Any = instance
-        else:
-            # Walk the MRO to find the first concrete _create_instance
-            # implementation.  This is necessary when the concrete provider
-            # appears later in the MRO than AbstractHttpAdapter (e.g. when
-            # using mixin-style composition via type()).
-            for klass in type(self).__mro__:
-                impl = klass.__dict__.get("_create_instance")
-                if impl is not None and not getattr(impl, "__isabstractmethod__", False):
-                    self._instance = impl(self)
-                    break
-            else:
-                self._instance = None
+        self._instance: Any = (
+            instance if instance is not None else self._create_instance()
+        )
 
     # ── concrete helpers ────────────────────────────────────────────────
     def get_http_server(self) -> Any:
