@@ -45,3 +45,6 @@ htmlcov/
 
 # Miscellaneous
 .DS_Store
+
+# Local dev sandbox — not part of the package
+test-app/
