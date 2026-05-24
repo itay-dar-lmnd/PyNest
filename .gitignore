@@ -48,3 +48,6 @@ htmlcov/
 
 # Local dev sandbox — not part of the package
 test-app/
+
+# Agent runtime cache/logs — local only
+.a5c/
