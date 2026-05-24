@@ -10,13 +10,12 @@ import pytest
 
 
 def _fastapi_adapter():
-    # Imported lazily — FastAPIAdapter doesn't exist until PR 2.
     from nest.engines.fastapi import FastAPIAdapter
     return FastAPIAdapter()
 
 
 REGISTERED_ADAPTERS = [
-    # pytest.param(_fastapi_adapter, id="fastapi"),   # uncomment when PR 2 lands
+    pytest.param(_fastapi_adapter, id="fastapi"),
     # pytest.param(_litestar_adapter, id="litestar"), # phase 2
 ]
 

@@ -1,10 +1,22 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Callable
 
-# Re-export HTTPMethod from its existing home to avoid duplication.
-from nest.core.decorators.http_method import HTTPMethod as HttpMethod
 
+class HttpMethod(Enum):
+    """HTTP methods supported by PyNest routes (engine-neutral)."""
+    GET = "GET"
+    POST = "POST"
+    DELETE = "DELETE"
+    PUT = "PUT"
+    PATCH = "PATCH"
+    HEAD = "HEAD"
+    OPTIONS = "OPTIONS"
+
+
+# Endpoint is just a callable returning anything — used as a type alias.
 Endpoint = Callable[..., Any]
+
 
 __all__ = ["HttpMethod", "Endpoint"]
