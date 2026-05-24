@@ -81,10 +81,12 @@ class RoutesResolver:
     def _register_gateway(self, gateway_class: type, gateway_instance: Any) -> None:
         from nest.websockets.gateway import NativeWebSocketGateway
 
+        # Pass the adapter (not raw HTTP server) so the gateway routes through
+        # whatever engine PyNest is using.
         NativeWebSocketGateway(
             gateway=gateway_instance,
             metadata=getattr(gateway_class, "__websocket_gateway__"),
-        ).register(self.adapter.get_http_server())
+        ).register(self.adapter)
 
     def _add_route(
         self,

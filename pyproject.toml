@@ -35,6 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+litestar = [
+    "litestar[standard]>=2.13,<3.0",
+]
 postgres = [
     "sqlalchemy>=2.0.36,<3.0.0",
     "asyncpg>=0.30.0,<0.31.0",

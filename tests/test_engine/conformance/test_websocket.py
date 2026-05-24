@@ -7,11 +7,13 @@ from starlette.testclient import TestClient
 
 
 def test_websocket_route_registers_and_handles_connection(adapter):
-    async def ws_endpoint(websocket: WebSocket):
-        await websocket.accept()
-        data = await websocket.receive_text()
-        await websocket.send_text(f"echo:{data}")
-        await websocket.close()
+    # Litestar requires the WebSocket parameter to be named `socket`.
+    # FastAPI accepts any name. Use `socket` for cross-engine compatibility.
+    async def ws_endpoint(socket: WebSocket) -> None:
+        await socket.accept()
+        data = await socket.receive_text()
+        await socket.send_text(f"echo:{data}")
+        await socket.close()
 
     adapter.add_websocket_route("/ws", ws_endpoint)
 

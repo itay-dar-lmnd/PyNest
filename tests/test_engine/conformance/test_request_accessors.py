@@ -13,7 +13,7 @@ from nest.engine.types import HttpMethod
 async def test_request_accessors(adapter):
     captured = {}
 
-    async def handler(request=ParamSpec(source="request")):
+    async def handler(request=ParamSpec(source="request")) -> dict:
         captured["method"] = adapter.get_request_method(request)
         captured["url"] = adapter.get_request_url(request)
         captured["hostname"] = adapter.get_request_hostname(request)

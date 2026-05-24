@@ -14,12 +14,13 @@ class BoomException(Exception):
 
 @pytest.mark.asyncio
 async def test_exception_handler_invoked(adapter):
-    async def handler():
+    async def handler() -> dict:
         raise BoomException("kaboom")
 
     from fastapi.responses import JSONResponse
 
-    async def boom_handler(request, exc):
+    # Sync handler — works with both FastAPI and Litestar (Litestar requires sync).
+    def boom_handler(request, exc):
         return JSONResponse(status_code=418, content={"detail": str(exc)})
 
     adapter.register_exception_handler(BoomException, boom_handler)

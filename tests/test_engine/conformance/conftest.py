@@ -14,9 +14,14 @@ def _fastapi_adapter():
     return FastAPIAdapter()
 
 
+def _litestar_adapter():
+    from nest.engines.litestar import LitestarAdapter
+    return LitestarAdapter()
+
+
 REGISTERED_ADAPTERS = [
     pytest.param(_fastapi_adapter, id="fastapi"),
-    # pytest.param(_litestar_adapter, id="litestar"), # phase 2
+    pytest.param(_litestar_adapter, id="litestar"),
 ]
 
 

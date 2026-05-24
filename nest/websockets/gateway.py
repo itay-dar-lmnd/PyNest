@@ -29,11 +29,28 @@ class NativeWebSocketGateway:
         self._initialized = False
         setattr(self.gateway, "server", self.server)
 
-    def register(self, app_ref: FastAPI) -> None:
-        async def endpoint(websocket: WebSocket):
-            await self.handle_connection(websocket)
+    def register(self, app_ref) -> None:
+        """
+        Register the WS endpoint via either a PyNest AbstractHttpAdapter
+        (engine-neutral) or — for backward compat — a raw FastAPI instance.
 
-        app_ref.add_api_websocket_route(self.metadata["namespace"], endpoint)
+        The endpoint uses parameter name ``socket`` so it works with both
+        FastAPI (any name accepted) and Litestar (requires ``socket``).
+        """
+        # Litestar requires the WS handler's parameter to be named `socket`
+        # AND return None. Both names work with FastAPI.
+        async def endpoint(socket: WebSocket) -> None:
+            await self.handle_connection(socket)
+
+        from nest.engine.http_adapter import AbstractHttpAdapter
+        if isinstance(app_ref, AbstractHttpAdapter):
+            app_ref.add_websocket_route(self.metadata["namespace"], endpoint)
+        elif hasattr(app_ref, "add_websocket_route"):
+            # Generic ASGI app with a known interface
+            app_ref.add_websocket_route(self.metadata["namespace"], endpoint)
+        else:
+            # FastAPI legacy path
+            app_ref.add_api_websocket_route(self.metadata["namespace"], endpoint)
 
     async def handle_connection(self, websocket: WebSocket) -> None:
         await self.ensure_initialized()

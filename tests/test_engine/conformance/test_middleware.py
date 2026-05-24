@@ -18,7 +18,7 @@ class StampingMiddleware(BaseHTTPMiddleware):
 
 @pytest.mark.asyncio
 async def test_middleware_runs_per_request(adapter):
-    async def handler():
+    async def handler() -> dict:
         return {"ok": True}
 
     adapter.use(StampingMiddleware)

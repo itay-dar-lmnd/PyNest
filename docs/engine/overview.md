@@ -50,14 +50,14 @@ NestJS-style so request introspection works the same regardless of engine.
 
 | Feature                | FastAPI | Litestar | Robyn  | Flask  |
 |------------------------|---------|----------|--------|--------|
-| HTTP routes            | ✅       | planned  | planned | planned |
-| Param decorators       | ✅       | planned  | planned | planned |
-| Middleware             | ✅       | planned  | planned | planned |
-| Exception filters      | ✅       | planned  | planned | planned |
-| Lifespan hooks         | ✅       | planned  | planned | planned |
-| Guards (basic flow)    | ✅       | planned  | planned | planned |
-| Guards (security_scheme + OpenAPI) | ✅ | n/a   | n/a    | n/a    |
-| WebSocket gateways     | ✅       | planned  | n/a    | n/a    |
+| HTTP routes            | ✅       | ✅        | planned | planned |
+| Param decorators       | ✅       | ✅        | planned | planned |
+| Middleware             | ✅       | ✅        | planned | planned |
+| Exception filters      | ✅       | ✅        | planned | planned |
+| Lifespan hooks         | ✅       | ✅        | planned | planned |
+| Guards (basic flow)    | ✅       | ✅        | planned | planned |
+| Guards (security_scheme + OpenAPI) | ✅ | partial   | n/a    | n/a    |
+| WebSocket gateways     | ✅       | ✅        | n/a    | n/a    |
 | OpenAPI generation     | native  | native   | native | manual |
 
 ## Choosing an engine

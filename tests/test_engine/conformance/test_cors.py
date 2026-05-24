@@ -10,7 +10,7 @@ from nest.engine.types import HttpMethod
 
 @pytest.mark.asyncio
 async def test_cors_preflight(adapter):
-    async def handler():
+    async def handler() -> dict:
         return {"ok": True}
 
     adapter.enable_cors(

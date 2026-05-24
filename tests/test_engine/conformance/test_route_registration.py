@@ -11,7 +11,7 @@ from nest.engine.types import HttpMethod
 
 @pytest.mark.asyncio
 async def test_add_route_get_no_params(adapter):
-    async def handler():
+    async def handler() -> dict:
         return {"hello": "world"}
 
     adapter.add_route(RouteSpec(method=HttpMethod.GET, path="/hello", endpoint=handler))
@@ -25,7 +25,7 @@ async def test_add_route_get_no_params(adapter):
 
 @pytest.mark.asyncio
 async def test_add_route_with_path_param(adapter):
-    async def handler(item_id: int = ParamSpec(source="path", name="item_id")):
+    async def handler(item_id: int = ParamSpec(source="path", name="item_id")) -> dict:
         return {"id": item_id}
 
     adapter.add_route(
@@ -46,7 +46,7 @@ async def test_add_route_with_path_param(adapter):
 
 @pytest.mark.asyncio
 async def test_add_route_post_returns_201_with_status_code(adapter):
-    async def handler():
+    async def handler() -> dict:
         return {"created": True}
 
     adapter.add_route(
@@ -66,7 +66,7 @@ async def test_add_route_post_returns_201_with_status_code(adapter):
 
 @pytest.mark.asyncio
 async def test_add_route_tags_appear_in_openapi(adapter):
-    async def handler():
+    async def handler() -> dict:
         return {}
 
     adapter.add_route(
@@ -77,24 +77,42 @@ async def test_add_route_tags_appear_in_openapi(adapter):
             tags=("custom-tag",),
         )
     )
+    # OpenAPI JSON lives at different paths per engine:
+    #   FastAPI  → /openapi.json
+    #   Litestar → /docs/openapi.json
+    candidate_paths = ["/openapi.json", "/docs/openapi.json"]
     async with AsyncClient(
         transport=ASGITransport(adapter.get_http_server()), base_url="http://t"
     ) as c:
-        r = await c.get("/openapi.json")
-        spec = r.json()
+        spec = None
+        for path in candidate_paths:
+            r = await c.get(path)
+            if r.status_code == 200 and "paths" in r.json():
+                spec = r.json()
+                break
+        assert spec is not None, f"Couldn't find OpenAPI spec at any of {candidate_paths}"
         op = spec["paths"]["/tagged"]["get"]
         assert "custom-tag" in op.get("tags", [])
 
 
 @pytest.mark.asyncio
 async def test_add_route_all_http_methods(adapter):
+    def make_handler(captured_method):
+        async def handler() -> dict:
+            return {"method": captured_method.value}
+        return handler
+
     for method in [HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT,
                    HttpMethod.PATCH, HttpMethod.DELETE]:
-        async def handler(m=method):
-            return {"method": m.value}
-
+        # Litestar defaults DELETE to status 204 (no body allowed); force 200
+        # so the conformance test can return a JSON body uniformly.
         adapter.add_route(
-            RouteSpec(method=method, path=f"/m{method.value.lower()}", endpoint=handler)
+            RouteSpec(
+                method=method,
+                path=f"/m{method.value.lower()}",
+                endpoint=make_handler(method),
+                status_code=200,
+            )
         )
 
     async with AsyncClient(

@@ -63,6 +63,7 @@ nav:
   - Engine:
     - Overview: engine/overview.md
     - FastAPI Adapter: engine/fastapi_adapter.md
+    - Litestar Adapter: engine/litestar_adapter.md
     - Writing an Adapter: engine/writing_an_adapter.md
     - Migration to 0.7: engine/migration_0.7.md
   - Dependency Injection: dependency_injection.md

@@ -104,15 +104,28 @@ class PyNestApp:
     # ── internals ──────────────────────────────────────────────────────
 
     def _register_global_handler(self, exc_type: type, filter_instance) -> None:
-        async def handler(request: Request, exc: Exception):
-            result = filter_instance.catch(exc, None)
-            if inspect.isawaitable(result):
-                result = await result
-            if result is None:
-                return JSONResponse(
-                    status_code=500, content={"message": "Internal server error"}
-                )
-            return result
+        catch = filter_instance.catch
+        # Branch on whether the filter's catch is async — so engines that
+        # require sync exception handlers (Litestar) still work when the
+        # filter is sync.
+        if inspect.iscoroutinefunction(catch):
+            async def handler(request: Request, exc: Exception):
+                result = await catch(exc, None)
+                if result is None:
+                    return JSONResponse(
+                        status_code=500,
+                        content={"message": "Internal server error"},
+                    )
+                return result
+        else:
+            def handler(request: Request, exc: Exception):  # type: ignore[misc]
+                result = catch(exc, None)
+                if result is None:
+                    return JSONResponse(
+                        status_code=500,
+                        content={"message": "Internal server error"},
+                    )
+                return result
 
         self.adapter.register_exception_handler(exc_type, handler)
 
