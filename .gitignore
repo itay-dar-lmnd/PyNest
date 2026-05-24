@@ -51,3 +51,6 @@ test-app/
 
 # Agent runtime cache/logs — local only
 .a5c/
+
+# Local planning notes — not part of the published docs
+docs/plans/
