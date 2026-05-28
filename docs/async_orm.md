@@ -8,7 +8,7 @@ environment.
 
 ### Requirements
 
-- Python 3.9+
+- Python 3.10+
 - PyNest (latest version)
 - SQLAlchemy < 2.0
 - async driver for your database (e.g. asyncpg for PostgreSQL, aiomysql for MySQL, or aiosqlite for SQLite)

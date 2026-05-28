@@ -4,7 +4,7 @@ This guide will help you get started with setting up a new PyNest project, creat
 
 ## Installation
 
-To install PyNest, ensure you have Python 3.9+ installed. Then, install PyNest using pip:
+To install PyNest, ensure you have Python 3.10+ installed. Then, install PyNest using pip:
 
 ```bash
 pip install pynest-api

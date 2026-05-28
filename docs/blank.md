@@ -6,7 +6,7 @@ This documentation introduces a creation of the simplest Pynest Application.
 
 ### Requirements
 
-- Python 3.9+
+- Python 3.10+
 - PyNest (latest version)
 
 ## Setting Up

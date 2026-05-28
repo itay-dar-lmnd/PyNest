@@ -8,7 +8,7 @@ programming environment and leveraging the great capabilities of mongodb and it'
 
 ### Requirements
 
-- Python 3.9+
+- Python 3.10+
 - PyNest (latest version)
 - beanie
 - motor
