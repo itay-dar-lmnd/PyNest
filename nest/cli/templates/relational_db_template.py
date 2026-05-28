@@ -64,20 +64,20 @@ class {self.capitalized_name}(config.Base):
         """
 
     def generate_requirements_file(self) -> str:
-        return f"""anyio==3.6.2
-click==8.1.3
-fastapi==0.95.1
-fastapi-utils==0.2.1
-greenlet==2.0.2
-h11==0.14.0
-idna==3.4
-pydantic==1.10.7
-python-dotenv==1.0.0
-sniffio==1.3.0
-SQLAlchemy==1.4.48
-starlette==0.26.1
-typing_extensions==4.5.0
-uvicorn==0.22.0
+        return f"""anyio==4.12.1
+click==8.1.8
+fastapi==0.136.3
+fastapi-utils==0.8.0
+greenlet==3.2.4
+h11==0.16.0
+idna==3.11
+pydantic==2.12.4
+python-dotenv==1.2.1
+sniffio==1.3.1
+SQLAlchemy==2.0.44
+starlette==1.1.0
+typing_extensions==4.15.0
+uvicorn==0.38.0
 pynest-api=={version}
     """
 

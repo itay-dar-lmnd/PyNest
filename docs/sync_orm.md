@@ -6,7 +6,7 @@ This example will demonstrate a simple PyNest application with Postgres as the d
 
 ### Requirements
 
-- Python 3.9+
+- Python 3.10+
 - PyNest (latest version)
 - SQLAlchemy 2.0
 
@@ -277,4 +277,3 @@ Now you can access the application at http://localhost:8000/docs and test the en
     <span>Application Example With Async ORM &rarr;</span>
   </a>
 </nav>
-
