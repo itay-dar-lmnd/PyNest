@@ -20,19 +20,11 @@ from litestar.connection import Request as LitestarRequest
 from litestar.di import Provide
 from litestar.exceptions import HTTPException as LitestarHTTPException
 from litestar.params import Body, Parameter
-from pydantic import TypeAdapter
-
+from nest.engine._shared import apply_pipes as _shared_apply_pipes
+from nest.engine._shared import coerce_value as _coerce_value
+from nest.engine._shared import has_param_specs  # noqa: F401  (re-exported for the adapter)
 from nest.engine.execution_context import ExecutionContext
 from nest.engine.params import ParamSpec
-
-
-def has_param_specs(endpoint: Callable) -> bool:
-    """True if any parameter of ``endpoint`` has a ParamSpec default."""
-    signature = inspect.signature(endpoint)
-    return any(
-        isinstance(parameter.default, ParamSpec)
-        for parameter in signature.parameters.values()
-    )
 
 
 def bind_params(endpoint: Callable) -> Callable:
@@ -319,28 +311,8 @@ async def _resolve_value_from_request(spec: ParamSpec, request: LitestarRequest)
 
 
 async def _apply_pipes(value: Any, pipes: Tuple[Any, ...]) -> Any:
-    for pipe in pipes:
-        pipe_instance = pipe() if inspect.isclass(pipe) else pipe
-        try:
-            if hasattr(pipe_instance, "transform"):
-                value = pipe_instance.transform(value)
-            elif callable(pipe_instance):
-                value = pipe_instance(value)
-            else:
-                raise TypeError("Pipe must be callable or expose a transform method")
-        except (ValueError, TypeError) as exc:
-            raise LitestarHTTPException(status_code=422, detail=str(exc)) from exc
-        if inspect.isawaitable(value):
-            value = await value
-    return value
-
-
-def _coerce_value(value: Any, annotation: Any) -> Any:
-    if value is None or annotation in {inspect.Parameter.empty, Any}:
-        return value
-    if inspect.isclass(annotation) and isinstance(value, annotation):
-        return value
-    return TypeAdapter(annotation).validate_python(value)
+    """Bind the shared pipe runner to Litestar's HTTPException for 422 rendering."""
+    return await _shared_apply_pipes(value, pipes, LitestarHTTPException)
 
 
 def _default_value(spec: ParamSpec) -> Any:

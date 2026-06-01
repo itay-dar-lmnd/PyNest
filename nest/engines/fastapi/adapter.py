@@ -20,6 +20,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
+from nest.engine._shared import NO_FILTER_MATCH, run_filters
 from nest.engine.http_adapter import AbstractHttpAdapter
 from nest.engine.route_spec import RouteSpec
 from nest.engines.fastapi.params import bind_params, has_param_specs
@@ -179,8 +180,6 @@ def _wrap_with_filters(endpoint: Callable, filters: tuple) -> Callable:
     """
     import typing as _typing
 
-    from nest.common.exceptions import ArgumentsHost
-
     original_sig = inspect.signature(endpoint)
     existing_params = list(original_sig.parameters.values())
     has_request = any(p.name == "request" for p in existing_params)
@@ -208,16 +207,10 @@ def _wrap_with_filters(endpoint: Callable, filters: tuple) -> Callable:
                 result = await result
             return result
         except Exception as exc:
-            host = ArgumentsHost(request=request)
-            for raw_filter in filters:
-                f = raw_filter() if inspect.isclass(raw_filter) else raw_filter
-                caught = getattr(f, "__caught_exceptions__", ())
-                if not caught or isinstance(exc, caught):
-                    result = f.catch(exc, host)
-                    if inspect.isawaitable(result):
-                        return await result
-                    return result
-            raise
+            result = await run_filters(exc, request, filters)
+            if result is NO_FILTER_MATCH:
+                raise
+            return result
 
     filter_wrapper.__name__ = getattr(endpoint, "__name__", "filter_wrapper")
     filter_wrapper.__signature__ = wrapper_sig

@@ -27,6 +27,8 @@ from litestar.exceptions import PermissionDeniedException
 from litestar.handlers.base import BaseRouteHandler
 from litestar.response import Redirect, Response
 
+from nest.engine._shared import NO_FILTER_MATCH, run_filters
+from nest.engine._shared import extract_credentials as _extract_credentials
 from nest.engine.http_adapter import AbstractHttpAdapter
 from nest.engine.route_spec import RouteSpec
 from nest.engine.types import HttpMethod
@@ -324,22 +326,6 @@ def _guard_to_litestar(guard: Any) -> Callable:
     return litestar_guard
 
 
-def _extract_credentials(connection: ASGIConnection, security_scheme: Any) -> Any:
-    """Best-effort credentials extraction from a Litestar connection."""
-    # FastAPI security schemes have a model with type/in/name. We mirror the
-    # FastAPI behaviour for the common cases (Bearer/APIKey).
-    scheme_name = type(security_scheme).__name__
-    if scheme_name in ("APIKeyHeader",):
-        header_name = getattr(security_scheme.model, "name", "X-API-Key")
-        return connection.headers.get(header_name.lower())
-    if scheme_name in ("HTTPBearer", "OAuth2PasswordBearer"):
-        auth = connection.headers.get("authorization", "")
-        if auth.startswith("Bearer "):
-            return auth[len("Bearer "):]
-        return None
-    return None
-
-
 def _wrap_with_filters(endpoint: Callable, filters: tuple) -> Callable:
     """
     Wrap an endpoint so exceptions route through PyNest ExceptionFilter instances.
@@ -348,8 +334,6 @@ def _wrap_with_filters(endpoint: Callable, filters: tuple) -> Callable:
     """
     import typing as _typing
     from litestar.connection import Request as LitestarRequest
-
-    from nest.common.exceptions import ArgumentsHost
 
     original_sig = inspect.signature(endpoint)
     existing_params = list(original_sig.parameters.values())
@@ -378,18 +362,14 @@ def _wrap_with_filters(endpoint: Callable, filters: tuple) -> Callable:
                 result = await result
             return result
         except Exception as exc:
-            host = ArgumentsHost(request=request)
-            for raw_filter in filters:
-                f = raw_filter() if inspect.isclass(raw_filter) else raw_filter
-                caught = getattr(f, "__caught_exceptions__", ())
-                if not caught or isinstance(exc, caught):
-                    result = f.catch(exc, host)
-                    if inspect.isawaitable(result):
-                        result = await result
-                    # Convert Starlette/FastAPI JSONResponse → Litestar Response
-                    # so per-route filters work the same regardless of engine.
-                    return _convert_to_litestar_response(result)
-            raise
+            # Convert Starlette/FastAPI JSONResponse → Litestar Response so
+            # per-route filters work the same regardless of engine.
+            result = await run_filters(
+                exc, request, filters, convert=_convert_to_litestar_response
+            )
+            if result is NO_FILTER_MATCH:
+                raise
+            return result
 
     filter_wrapper.__name__ = getattr(endpoint, "__name__", "filter_wrapper")
     filter_wrapper.__signature__ = wrapper_sig
